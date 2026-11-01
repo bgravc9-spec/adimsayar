@@ -1,0 +1,87 @@
+name: ADIM SAYAR - APK Derle
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  android-apk:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Kaynak kodlarini indir
+        uses: actions/checkout@v4
+
+      - name: Java 17 kur
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # GitHub ubuntu-latest Android SDK'yi halihazirda saglar.
+      # Onceki setup-android@v3 adimi baska bir SDK arac surumunu indirirken
+      # bazi runner'larda lisans/repository hatasi veriyordu.
+      - name: Android SDK kontrol et
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          echo "SDK konumu: $SDK_DIR"
+          echo "JAVA_HOME: $JAVA_HOME"
+          test -d "$SDK_DIR" || { echo 'Android SDK bulunamadi.'; exit 1; }
+          if ! command -v sdkmanager >/dev/null 2>&1; then
+            export PATH="$SDK_DIR/cmdline-tools/latest/bin:$PATH"
+          fi
+          command -v sdkmanager || { echo 'sdkmanager bulunamadi.'; exit 1; }
+          sdkmanager --version
+          if [[ ! -d "$SDK_DIR/platforms/android-35" || ! -d "$SDK_DIR/build-tools/35.0.0" ]]; then
+            echo 'Eksik Android 35 paketleri kuruluyor...'
+            sdkmanager --licenses < <(yes) >/dev/null
+            sdkmanager --install 'platforms;android-35' 'build-tools;35.0.0'
+          fi
+          test -d "$SDK_DIR/platforms/android-35" || { echo 'platforms/android-35 eksik.'; exit 1; }
+          test -d "$SDK_DIR/build-tools/35.0.0" || { echo 'build-tools/35.0.0 eksik.'; exit 1; }
+          echo 'Android SDK hazir.'
+
+      - name: Gradle 8.13 kur
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Debug APK derle
+        run: gradle --no-daemon :app:assembleDebug --stacktrace
+
+      - name: APK dosyasini sun
+        uses: actions/upload-artifact@v4
+        with:
+          name: ADIM-SAYAR-debug-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      # Wrapper dosyalarini ancak derleme basarili olduktan sonra uret.
+      # Bu sayede GitHub'dan indirilen kaynak proje Android Studio'da acilabilir.
+      - name: Gradle Wrapper dosyalarini olustur
+        run: gradle --no-daemon wrapper --gradle-version 8.13
+
+      - name: Android Studio proje ZIP'i olustur
+        shell: bash
+        run: |
+          set -euo pipefail
+          zip -q -r ADIM_SAYAR_ANDROID_STUDIO_TAM.zip \
+            app/src app/build.gradle.kts app/proguard-rules.pro \
+            gradle .github README.md PRIVACY.md \
+            settings.gradle.kts build.gradle.kts gradle.properties \
+            .gitignore gradlew gradlew.bat
+          unzip -t ADIM_SAYAR_ANDROID_STUDIO_TAM.zip | tail -1
+
+      - name: Android Studio kaynak ZIP'ini sun
+        uses: actions/upload-artifact@v4
+        with:
+          name: ADIM-SAYAR-AndroidStudio-Kaynak
+          path: ADIM_SAYAR_ANDROID_STUDIO_TAM.zip
+          if-no-files-found: error
+          retention-days: 30
