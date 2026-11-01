@@ -1,6 +1,8 @@
+**V2 NOT:** GitHub Actions eski setup-android@v3 adimi yerine hazir SDK'yi kullanir. Yukleme adimlari icin `GITHUB_KURULUM_TR.md` dosyasina bak. Kaynak ZIP ilk halinde wrapper JAR barindirmaz; ilk basarili Actions calismasi tam Android Studio kaynak ZIP'ini olusturur.
+
 # ADIM SAYAR — Android Studio + GitHub Actions
 
-**Sürüm:** 1.0.0 (ilk çalışan geliştirici sürümü)  
+**Sürüm:** 1.0.0 (ilk geliştirici sürümü; derleme ve cihaz testi bekliyor)  
 **Platform:** Android 8.0 (API 26) ve üstü  
 **Dil:** Kotlin (tamamen yerel Android uygulaması; HTML/WebView değil)  
 **İnternet:** Uygulama çalışırken gerekmiyor  
@@ -43,7 +45,7 @@
 Bu ilk ZIP, GitHub Actions üzerinde doğrudan derlenebilecek bütün kaynak kodlarını içerir.
 Gradle Wrapper **binary jar** dosyası GitHub iş akışında resmi Gradle ile üretilir.
 Android Studio ile yerelde en sorunsuz açılış için Actions artefaktındaki
-`ADIM_SAYAR_ANDROID_STUDIO_HAZIR.zip` dosyasını indirip açman önerilir.
+`ADIM_SAYAR_ANDROID_STUDIO_TAM.zip` dosyasını indirip açman önerilir.
 
 Android Studio > **File > Open** > `AdimSayar` proje klasörünü seç > **Sync Project** >
 **Run**. JDK 17 ve Android SDK Platform 35 kurulu olmalı.
